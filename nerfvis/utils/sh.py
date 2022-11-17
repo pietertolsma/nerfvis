@@ -20,6 +20,7 @@ https://github.com/google/spherical-harmonics/blob/master/sh/spherical_harmonics
 from typing import Callable
 import math
 import torch
+import numpy as np
 
 kHardCodedOrderLimit = 4
 
@@ -262,6 +263,20 @@ def EvalSH(l: int, m: int, dirs):
         # return EvalSHSlow(l, m, dx, dy, dz)
         raise NotImplementedError
 
+def EvalAllSH(dirs: torch.Tensor):
+    # eval up until l = 2
+    res = torch.empty((dirs.shape[0], 9))
+    options = [(0, 0), (1, -1), (1, 0), (1, 1), (2, -2), (2, -1), (2, 0), (2, 1), (2, 2)]
+    index = 0
+    print(dirs.shape)
+    print(res.shape)
+    for (m, l) in options:
+        res[:, index] = EvalSH(m, l, dirs)
+
+        index += 1
+    return res
+
+
 
 def spherical_uniform_sampling(sample_count, device="cpu"):
     # See: https://www.bogotobogo.com/Algorithms/uniform_distribution_sphere.php
@@ -319,6 +334,29 @@ def project_function(
     coeffs = coeffs.reshape(batch_size, -1)
     others = others.reshape(batch_size, -1)
     return coeffs, others
+
+
+def project_from_weights(
+    weights: torch.Tensor,
+    rings: int,
+    sectors: int,
+    device = "cpu"
+):
+    assert weights.shape == (3, 9), "Weights must be in (3, 9) shape"
+    phi = torch.linspace(0, np.pi, rings)
+    theta = torch.linspace(0, 2*np.pi, sectors)
+    phi, theta = torch.meshgrid(phi, theta)
+    phi, theta = phi.flatten(), theta.flatten()
+    
+    dirs = spher2cart(theta, phi)   # [sample_count, 3]
+    basis_vals = EvalAllSH(dirs) # [sample_count, 9]
+
+    
+    r = weights[0, :] @ basis_vals.T
+    g = weights[1, :] @ basis_vals.T
+    b = weights[2, :] @ basis_vals.T
+
+    return torch.column_stack((r, g, b))
 
 
 def project_function_sparse(

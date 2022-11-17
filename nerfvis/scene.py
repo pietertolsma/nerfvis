@@ -288,6 +288,12 @@ class Scene:
         self._update_bb(p1, **kwargs)
         self._update_bb(p2, **kwargs)
 
+    def add_sh_sphere(self, weights : np.ndarray, rings:int, sectors:int,name: str = "sphere", **kwargs):
+        from .utils.sh import project_from_weights
+        colors = project_from_weights(weights, rings=rings, sectors=sectors).numpy()
+
+        self.add_sphere(name = name, rings=rings, sectors=sectors, vert_color=colors, **kwargs)
+
     def add_line(self, name : str,
                  a : np.ndarray,
                  b : np.ndarray, **kwargs):
