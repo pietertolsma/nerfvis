@@ -268,8 +268,6 @@ def EvalAllSH(dirs: torch.Tensor):
     res = torch.empty((dirs.shape[0], 9))
     options = [(0, 0), (1, -1), (1, 0), (1, 1), (2, -2), (2, -1), (2, 0), (2, 1), (2, 2)]
     index = 0
-    print(dirs.shape)
-    print(res.shape)
     for (m, l) in options:
         res[:, index] = EvalSH(m, l, dirs)
 
@@ -347,7 +345,7 @@ def project_from_weights(
     theta = torch.linspace(0, 2*np.pi, sectors)
     phi, theta = torch.meshgrid(phi, theta)
     phi, theta = phi.flatten(), theta.flatten()
-    
+
     dirs = spher2cart(theta, phi)   # [sample_count, 3]
     basis_vals = EvalAllSH(dirs) # [sample_count, 9]
 
